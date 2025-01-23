@@ -250,12 +250,12 @@ resource "aws_vpc_security_group_egress_rule" "artifactory_https_outbound_rule" 
   ip_protocol       = "tcp"
 }
 
-resource "aws_vpc_security_group_egress_rule" "artifactory_dns_outbound_rule" {
+resource "aws_vpc_security_group_egress_rule" "artifactory_http_outbound_rule" {
   security_group_id = aws_security_group.artifactory_sg.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 53
-  to_port           = 53
-  ip_protocol       = "udp"
+  from_port         = 80
+  to_port           = 80
+  ip_protocol       = "tcp"
 }
 
 # EC2 instance for Artifactory
@@ -314,12 +314,12 @@ resource "aws_vpc_security_group_egress_rule" "sonarqube_https_outbound_rule" {
   ip_protocol       = "tcp"
 }
 
-resource "aws_vpc_security_group_egress_rule" "sonarqube_dns_outbound_rule" {
+resource "aws_vpc_security_group_egress_rule" "sonarqube_http_outbound_rule" {
   security_group_id = aws_security_group.sonarqube_sg.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 53
-  to_port           = 53
-  ip_protocol       = "udp"
+  from_port         = 80
+  to_port           = 80
+  ip_protocol       = "tcp"
 }
 
 # EC2 instance for Sonarqube
