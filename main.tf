@@ -53,11 +53,6 @@ resource "aws_eip" "nat_eip" {
   domain = "vpc"
 }
 
-# Why Elatic IP?
-# If you're deploying private instances that need internet access via NAT Gateway, 
-# the Elastic IP is essential to enable that functionality. 
-# Without it, your private instances cannot reach the internet.
-
 # NAT GAteway
 resource "aws_nat_gateway" "main_nat" {
   allocation_id = aws_eip.nat_eip.id
@@ -145,10 +140,10 @@ resource "aws_vpc_security_group_egress_rule" "outbound_rule1" {
 resource "aws_instance" "jenkins_server" {
   ami                    = "ami-04b4f1a9cf54c11d0"
   instance_type          = "t2.micro"
-  key_name = "new-test-key-pair"
+  key_name               = "new-test-key-pair"
   vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
   subnet_id              = aws_subnet.public_subnet.id
-  user_data              = filebase64("./jenkins_user_data.sh")
+  user_data              = filebase64("user-data-scripts/jenkins_user_data.sh")
 
   tags = {
     Name = "JenkinsServer"
@@ -180,16 +175,25 @@ resource "aws_vpc_security_group_ingress_rule" "bastion_sg_inbound_rule1" {
 resource "aws_vpc_security_group_egress_rule" "bastion_outbound_rule1" {
   security_group_id = aws_security_group.bastion_sg.id
   cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "-1"
-  from_port         = 0
-  to_port           = 0
+  ip_protocol       = "tcp"
+  from_port         = 22
+  to_port           = 22
+}
+
+# Bastion Security Group HTTPS Outbound Rule 
+resource "aws_vpc_security_group_egress_rule" "bastion_outbound_https" {
+  security_group_id = aws_security_group.bastion_sg.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
 }
 
 # EC2 Instance for Bastion
 resource "aws_instance" "bastion_host" {
   ami                    = "ami-04b4f1a9cf54c11d0"
   instance_type          = "t2.micro"
-  key_name = "new-test-key-pair"
+  key_name               = "new-test-key-pair"
   vpc_security_group_ids = [aws_security_group.bastion_sg.id]
   subnet_id              = aws_subnet.public_subnet.id
 
@@ -238,22 +242,31 @@ resource "aws_vpc_security_group_ingress_rule" "artifactory_sg_inbound_rule3" {
 }
 
 # Artifactory Security Group Outbound Rule 
-resource "aws_vpc_security_group_egress_rule" "artifactory_sg_outbound_rule" {
+resource "aws_vpc_security_group_egress_rule" "artifactory_https_outbound_rule" {
   security_group_id = aws_security_group.artifactory_sg.id
   cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "-1" 
+  from_port         = 443
+  to_port           = 443
+  ip_protocol       = "tcp"
+}
+
+resource "aws_vpc_security_group_egress_rule" "artifactory_dns_outbound_rule" {
+  security_group_id = aws_security_group.artifactory_sg.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 53
+  to_port           = 53
+  ip_protocol       = "udp"
 }
 
 # EC2 instance for Artifactory
 resource "aws_instance" "artifactory_server" {
   ami                         = "ami-04b4f1a9cf54c11d0"
   instance_type               = "t2.medium"
-  key_name = "new-test-key-pair"
+  key_name                    = "new-test-key-pair"
   vpc_security_group_ids      = [aws_security_group.artifactory_sg.id]
   subnet_id                   = aws_subnet.private_subnet.id
   associate_public_ip_address = false
-  user_data              = filebase64("./artifactory_user_data.sh")
-
+  user_data                   = filebase64("user-data-scripts/artifactory_user_data.sh")
 
   tags = {
     Name = "ArtifactoryServer"
@@ -293,21 +306,31 @@ resource "aws_vpc_security_group_ingress_rule" "sonarqube_sg_inbound_rule2" {
 }
 
 # Sonarqube Security Group Outbound Rule 
-resource "aws_vpc_security_group_egress_rule" "sonarqube_sg_outbound_rule" {
+resource "aws_vpc_security_group_egress_rule" "sonarqube_https_outbound_rule" {
   security_group_id = aws_security_group.sonarqube_sg.id
   cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "-1" 
+  from_port         = 443
+  to_port           = 443
+  ip_protocol       = "tcp"
+}
+
+resource "aws_vpc_security_group_egress_rule" "sonarqube_dns_outbound_rule" {
+  security_group_id = aws_security_group.sonarqube_sg.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 53
+  to_port           = 53
+  ip_protocol       = "udp"
 }
 
 # EC2 instance for Sonarqube
 resource "aws_instance" "sonarqube_server" {
   ami                         = "ami-04b4f1a9cf54c11d0"
   instance_type               = "t2.medium"
-  key_name = "new-test-key-pair"
+  key_name                    = "new-test-key-pair"
   vpc_security_group_ids      = [aws_security_group.sonarqube_sg.id]
   subnet_id                   = aws_subnet.private_subnet.id
   associate_public_ip_address = false
-  user_data              = filebase64("./sonarqube_user_data.sh")
+  user_data                   = filebase64("user-data-scripts/sonarqube_user_data.sh")
 
   tags = {
     Name = "SonarqubeServer"
